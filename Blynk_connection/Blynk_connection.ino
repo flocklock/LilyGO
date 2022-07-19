@@ -23,9 +23,10 @@
  **************************************************************/
 
 #define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
-#define BLYNK_TEMPLATE_ID "TMPLLLCphTNF"
-#define BLYNK_DEVICE_NAME "Quickstart Template"
-#define BLYNK_AUTH_TOKEN "-_EYozVWqPndSjPL90boPIQm0SiVqVOG"
+
+
+// See all AT commands, if wanted
+#define DUMP_AT_COMMANDS
 
 // Default heartbeat interval for GSM is 60
 // If you want override this value, uncomment and set this option:
@@ -56,6 +57,9 @@
 
 #include <TinyGsmClient.h>
 #include <BlynkSimpleTinyGSM.h>
+#define BLYNK_TEMPLATE_ID "TMPLLLCphTNF"
+#define BLYNK_DEVICE_NAME "Quickstart Template"
+#define BLYNK_AUTH_TOKEN "-_EYozVWqPndSjPL90boPIQm0SiVqVOG"
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -86,7 +90,44 @@ const char pass[] = "";
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
 
+#ifdef DUMP_AT_COMMANDS
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm modem(debugger);
+#else
 TinyGsm modem(SerialAT);
+#endif
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+
+/* Assign a unique ID to this sensor at the same time */
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+
+void displaySensorDetails(void)
+{
+  sensor_t sensor;
+  accel.getSensor(&sensor);
+  Serial.println("------------------------------------");
+  Serial.print  ("Sensor:       "); Serial.println(sensor.name);
+  Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
+  Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
+  Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" m/s^2");
+  Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" m/s^2");
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" m/s^2");  
+  Serial.println("------------------------------------");
+  Serial.println("");
+  delay(500);
+}
+
+BlynkTimer timer;
+void myTimerEvent() // This loop defines what happens when timer is triggered
+{
+  sensors_event_t event; 
+  accel.getEvent(&event);
+  Blynk.virtualWrite(V2, event.acceleration.x);
+}
 
 void setup()
 {
@@ -96,24 +137,35 @@ void setup()
 
   // Set GSM module baud rate
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
-  delay(6000);
+  delay(10000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
   modem.init();
+  delay(5000);
+
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
 
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
-
   Blynk.begin(BLYNK_AUTH_TOKEN, modem, apn, user, pass);
+  Wire.begin();
+  SerialMon.println("Accelerometer Test"); Serial.println("");
+  if(!accel.begin())
+  {
+    SerialMon.println("Ooops, no ADXL345 detected ... Check your wiring!");
+    while(1);
+  }
+  accel.setRange(ADXL345_RANGE_16_G);
+  displaySensorDetails();
+
+  timer.setInterval(1000L, myTimerEvent);
 }
 
 void loop()
 {
   Blynk.run();
+  timer.run();
 }

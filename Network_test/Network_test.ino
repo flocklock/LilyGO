@@ -1,24 +1,22 @@
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
-// Set serial for AT commands (to the module)
-// Use Hardware Serial on Mega, Leonardo, Micro
-#define SerialAT Serial1
-
 #define TINY_GSM_MODEM_SIM7000
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 #define SerialAT Serial1
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+#define DUMP_AT_COMMANDS
 
 // set GSM PIN, if any
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[]  = "cdp.iot.t-mobile.nl";     //SET TO YOUR APN
+const char apn[]  = "lpwa.vodafone.com";     //SET TO YOUR APN
 const char gprsUser[] = "";
 const char gprsPass[] = "";
+
+#include <BlynkSimpleTinyGSM.h>
 
 #include <TinyGsmClient.h>
 #include <SPI.h>
@@ -32,6 +30,8 @@ TinyGsm modem(debugger);
 #else
 TinyGsm modem(SerialAT);
 #endif
+
+BlynkTimer timer;
 
 #define uS_TO_S_FACTOR      1000000ULL  // Conversion factor for micro seconds to seconds
 #define TIME_TO_SLEEP       60          // Time ESP32 will go to sleep (in seconds)
@@ -47,6 +47,11 @@ TinyGsm modem(SerialAT);
 #define SD_SCLK             14
 #define SD_CS               13
 #define LED_PIN             12
+
+#define BLYNK_TEMPLATE_ID "TMPLLLCphTNF"
+#define BLYNK_DEVICE_NAME "nbiot test"
+#define BLYNK_AUTH_TOKEN "-_EYozVWqPndSjPL90boPIQm0SiVqVOG"
+const char auth[] = BLYNK_AUTH_TOKEN;
 
 
 void enableGPS(void)
@@ -128,6 +133,15 @@ void setup()
     Serial.println("/**********************************************************/\n\n");
 
     delay(10000);
+
+    //Blynk.begin(auth, modem, apn, "", "");
+    Serial.println("lol");
+
+    //timer.setInterval(1000L, myTimerEvent);
+
+}
+void myTimerEvent() {
+  Blynk.virtualWrite(V2, millis() / 1000);
 }
 
 void loop()
@@ -185,7 +199,7 @@ void loop()
 
     for (int i = 0; i <= 4; i++) {
         uint8_t network[] = {
-            2,  /*Automatic*/
+            // 2,  /*Automatic*/
             13, /*GSM only*/
             38, /*LTE only*/
             51  /*GSM and LTE only*/
@@ -233,11 +247,17 @@ void loop()
         Serial.println(res);
     }
 
+    
+
     Serial.println("/**********************************************************/");
     Serial.println("After the network test is complete, please enter the  ");
     Serial.println("AT command in the serial terminal.");
     Serial.println("/**********************************************************/\n\n");
-
+/*
+  Blynk.run();
+  timer.run();
+  Serial.println("running");
+*/
     while (1) {
         while (SerialAT.available()) {
             SerialMon.write(SerialAT.read());
@@ -246,4 +266,5 @@ void loop()
             SerialAT.write(SerialMon.read());
         }
     }
+    
 }
