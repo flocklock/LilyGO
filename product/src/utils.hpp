@@ -19,3 +19,13 @@
 
 event e[32];
 
+void blink(int interval, int duration) {
+    int time = millis();
+    while(millis() - time < duration) {
+        digitalWrite(LED_PIN, LOW);
+        delay(interval);
+        digitalWrite(LED_PIN, HIGH);
+        delay(interval);
+    }
+}
+

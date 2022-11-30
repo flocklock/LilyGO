@@ -135,6 +135,10 @@ void IRAM_ATTR onGnssTimer() {
 
 void setup()
 {
+  digitalWrite(PWR_PIN, HIGH);
+  delay(300);
+  digitalWrite(PWR_PIN, LOW);
+  delay(10000); 
   pinMode(PIN_DTR, OUTPUT);
   digitalWrite(PIN_DTR, LOW);
   pinMode(LED_PIN, OUTPUT);
@@ -146,18 +150,29 @@ void setup()
   D(SerialMon.println(boardCurrentVersion);)
   D(SerialMon.print("Device id: ");) 
   D(SerialMon.println(deviceId);)
-  
+
   
   setupGSM();
   delay(3000);
   setupFOTAGSM();
-  modem.sendAT("+CSCLK=1");
-  modem.sendAT("+CNETLIGHT=0");
+ SerialMon.println("modem set");
+ 
+ 
+ 
+
+ SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
+ //modem.init();
+ if(modem.testAT())
+    SerialMon.println("modem ok");
+  else
+    SerialMon.println("modem not ok");
+  //modem.sendAT("+CNETLIGHT=0");
   delay(100);
-  digitalWrite(PIN_DTR, HIGH);
+  digitalWrite(PIN_DTR, LOW);
   digitalWrite(LED_PIN, HIGH);
   //esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
   D(SerialMon.flush();)
+  SerialAT.flush();
   //esp_light_sleep_start();
   digitalWrite(LED_PIN, LOW);
 
@@ -166,6 +181,10 @@ void setup()
   //D(Serial.begin(115200);)
   if(accel.begin()) {D(SerialMon.println("acc sensor found");)}
 
+      
+
+
+  delay(1000);
   accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b00000000);
   accel.setRange(ADXL345_RANGE_16_G);
   accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
@@ -190,6 +209,22 @@ void setup()
 
 void loop()
 {
+  /*
+  while (true) {
+    if (SerialAT.available()) {
+      Serial.write(SerialAT.read());
+    }
+    if (Serial.available()) {
+      SerialAT.write(Serial.read());
+    }
+    delay(1);
+  }
+  Serial.println("Failed");
+  setup();
+  
+  digitalWrite(PIN_DTR, LOW);
+  delay(10000);
+  SerialMon.println("loop");
   
   D(SerialMon.println(String("acc reading"));)
     for (int i = 0; i < 32; i++) {
@@ -199,32 +234,29 @@ void loop()
     for(int i = 0; i < 32; i++) {
       D(SerialMon.println(String("acc data: ") + String(e[i].X, 2));)
     }
-
+//if(false) {
   if(!lastGnssCheck || millis() - lastGnssCheck > 20000) {
     digitalWrite(PIN_DTR, LOW);
     if (modem.testAT()) {
         D(Serial.println("Modem ok");)
-        //modem.sendAT("+CSCLK=0");
+        modem.sendAT("+CSCLK=0");
+        if (modem.waitResponse() != 1) D(Serial.println("cant slow clock in gps function");)
+
         delay(10);
-        modem.sendAT("+CGNSPWR=1");
-        if (modem.waitResponse(10000L) != 1) {
-        DBG(" CGNSPWR=1 false ");
-        }
         modem.sendAT("+SGPIO=0,4,1,1");
-        if (modem.waitResponse(10000L) != 1) {
-        DBG(" SGPIO=0,4,1,1 false ");
-        }
+        if (modem.waitResponse() != 1) D(Serial.println("cant set gpio high");)
+        delay(1000);
+        //modem.sendAT(GF("+CGNSPWR=1"));
+    //if (modem.waitResponse() != 1) D(Serial.println("cant power on");)
 
         float lat,  lon;
+        int i = 0;
         while (1) {
           //modem.sendAT(GF("+CGNSINF"));
-          modem.sendAT("+CGNSINF");
-          if (modem.waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) {
-            continue;
     
-          String res = stream.readStringUntil('\n');
+          //String res = stream.readStringUntil('\n');
           modem.waitResponse();
-          res.trim();
+          //res.trim();
           if (modem.getGPS(&lat, &lon)) {
             D(Serial.println("The location has been locked, the latitude and longitude are:");)
             D(Serial.print("latitude:"); Serial.println(lat);)
@@ -236,26 +268,22 @@ void loop()
         delay(1000);
         digitalWrite(LED_PIN, LOW);
         delay(1000);
+        i++;
+        if(i >= 5)
+          break;
       }
-      modem.sendAT("+CGNSPWR=0");
-      if (modem.waitResponse(10000L) != 1) {
-        DBG(" CGNSPWR=0 false ");
-        }
       modem.sendAT("+SGPIO=0,4,1,0");
-      if (modem.waitResponse(10000L) != 1) {
-        DBG(" SGPIO=0,4,1,01 false ");
-        }
+        if (modem.waitResponse() != 1) D(Serial.println("cant set gpio low");)
+        delay(1000);
+        //modem.sendAT(GF("+CGNSPWR=0"));
+    //if (modem.waitResponse() != 1) D(Serial.println("cant power off");)
       delay(100);
-      modem.sendAT("+CSCLK=1");
-      delay(10);
       digitalWrite(PIN_DTR, HIGH);
-    }
-    else {
-      D(Serial.println("Modem not responding");)
     }
     lastGnssCheck = millis();
     digitalWrite(PIN_DTR, HIGH);
-  }
+    }
+  
   if(!lastFotaCheck || millis() - lastFotaCheck > 3600000) {
     digitalWrite(PIN_DTR, LOW);
     bool updatedNeeded = fota.execHTTPcheck();
@@ -269,21 +297,63 @@ void loop()
     D(SerialMon.println("Already up to date. No need to update");)
   }
   lastFotaCheck = millis();
+  
+  }
   modem.sendAT("+CSCLK=1");
   delay(10);
   digitalWrite(PIN_DTR, HIGH);
-  }
-  digitalWrite(PIN_DTR, LOW);
-  modem.sendAT("+CSCLK=0");
-  delay(20);
-  modem.sendAT("+CSCLK=1");
-  delay(20);
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(PIN_DTR, HIGH);
   esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
   D(SerialMon.flush();)
   esp_light_sleep_start();
   digitalWrite(LED_PIN, HIGH);
   delay(10);
+*/
+digitalWrite(PIN_DTR, LOW);
+SerialMon.println("starting loop");
+blink(100, 7000);
 
+modem.sendAT("+CSCLK=1"); 
+digitalWrite(PIN_DTR, HIGH);
+digitalWrite(LED_PIN, HIGH);
+delay(12000);
+
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
+  D(SerialMon.flush();)
+  esp_light_sleep_start();
+
+digitalWrite(PIN_DTR, LOW);
+modem.sendAT("+SGPIO=0,4,1,1");
+blink(500, 7000);
+
+modem.sendAT("+CGNSPWR=1");
+blink(1000, 7000);
+
+for(int i = 0; i < 5; i++) {
+  modem.sendAT("+CGNSINF");
+  blink(50, 200);
+  delay(1000);
+}
+
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
+  D(SerialMon.flush();)
+  esp_light_sleep_start();
+
+modem.sendAT("+CGNSPWR=0");
+blink(1000, 7000);
+
+modem.sendAT("+SGPIO=0,4,1,0");
+blink(500, 7000);
+
+modem.sendAT("+CSCLK=1"); 
+digitalWrite(PIN_DTR, HIGH);
+digitalWrite(LED_PIN, HIGH);
+delay(12000);
+
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
+  D(SerialMon.flush();)
+  esp_light_sleep_start();
 }
