@@ -327,41 +327,52 @@ for(int i = 0; i < 5; i++) {
   delay(1000);
 }
 
-digitalWrite(LED_PIN, LOW);
-esp_sleep_enable_timer_wakeup(4 * uS_TO_S_FACTOR);
-  D(SerialMon.flush();)
-  esp_light_sleep_start();
+delay(200);
 
 modem.sendAT("+CGNSPWR=0");
-blink(1000, 3000);
+//blink(1000, 2000);
+delay(200);
 
 modem.sendAT("+SGPIO=0,4,1,0");
-blink(500, 3000);
+//blink(500, 2000);
+delay(200);
 
-modem.sendAT("+CSCLK=1"); 
+modem.sendAT("+CSCLK=1");
+delay(200);
 digitalWrite(PIN_DTR, HIGH);
 digitalWrite(LED_PIN, HIGH);
-delay(2000);
+//delay(1000);
 
 digitalWrite(LED_PIN, LOW);
-esp_sleep_enable_timer_wakeup(2 * uS_TO_S_FACTOR);
-  D(SerialMon.flush();)
-  esp_light_sleep_start();
-
-
-  digitalWrite(PIN_DTR, LOW);
-SerialMon.println("starting loop");
-blink(100, 7000);
-
-modem.sendAT("+CSCLK=1"); 
-digitalWrite(PIN_DTR, HIGH);
-digitalWrite(LED_PIN, HIGH);
-delay(12000);
-
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
 digitalWrite(LED_PIN, LOW);
-esp_sleep_enable_timer_wakeup(30 * uS_TO_S_FACTOR);
-  D(SerialMon.flush();)
-  esp_light_sleep_start();
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
+digitalWrite(LED_PIN, LOW);
+esp_sleep_enable_timer_wakeup(20 * uS_TO_S_FACTOR);
+D(SerialMon.flush();)
+esp_light_sleep_start();
+delay(1000);
 /*
 digitalWrite(LED_PIN, LOW);
 esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
