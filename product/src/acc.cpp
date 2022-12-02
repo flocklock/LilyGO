@@ -1,5 +1,6 @@
 #include <acc.hpp>
 
+
 Accelerometer::Accelerometer(int32_t sensorID) {
     int32_t _sensorID;
     range_t _range;

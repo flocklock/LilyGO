@@ -99,3 +99,5 @@ void setDataRate(dataRate_t dataRate);
      int32_t _sensorID;
      range_t _range;
 };
+
+

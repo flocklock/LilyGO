@@ -9,8 +9,12 @@
 
 // ============== FOTA =============
 #include <esp32fotagsm.h>
-#include <location.hpp>
-const char *boardModel = "test-esp32";                    // TO CHANGE
+
+#ifndef MODEM_HEADER
+#include <modemHeader.hpp>
+#endif
+
+const char *boardModel = "flocklock";                    // TO CHANGE
 int boardCurrentVersion = 1; // The firmware version      // TO CHANGE
 
 // To define firmware type and version
@@ -19,7 +23,7 @@ esp32FOTAGSM fota(boardModel, boardCurrentVersion);
 // To define link to check update json
 #define esp32FOTAGSM_checkHOST      "147.251.115.100"         // TO CHANGE
 #define esp32FOTAGSM_checkPORT      8000                   // TO CHANGE, HTTP ONLY
-#define esp32FOTAGSM_checkRESOURCE  "/firmware.json" // TO CHANGE
+#define esp32FOTAGSM_checkRESOURCE  "/test.json" // TO CHANGE
 
 // ============== GSM ===============
 #if (!defined(SRC_TINYGSMCLIENT_H_))
@@ -34,9 +38,8 @@ const char apn[]  = "lpwa.vodafone.com";    // TO CHANGE
 const char user[] = "";      // TO CHANGE
 const char pass[] = "";      // TO CHANGE
 bool gprs_connected = false;
+String iccid = "000001";
 
-
-//TinyGsmClient client(modem);
 bool reply = false;
 
 void setupGSM()
@@ -50,10 +53,13 @@ void setupGSM()
   pinMode(PIN_DTR, OUTPUT);
   digitalWrite(PIN_DTR, LOW);
 
+  /*
   digitalWrite(PWR_PIN, HIGH);
   delay(300);
   digitalWrite(PWR_PIN, LOW);
-  delay(10000);     
+  delay(10000); 
+  */
+ modemPowerOn();  
   SerialMon.println("\nStarted");
   delay(6000);
   SerialMon.println("Initializing modem...");
@@ -87,8 +93,11 @@ void setupGSM()
     SerialMon.println(F(" Failed to connect to the modem! Check the baud and try again."));
     SerialMon.println(F("***********************************************************\n"));
   }
-
-  SerialMon.println("Initializing modem...");
+  
+  modem.sendAT("+CCID");
+  modem.waitResponse(10000L, iccid);
+  SerialMon.print("iccid is: ");
+  SerialMon.println(iccid);
   modem.init();
 
 

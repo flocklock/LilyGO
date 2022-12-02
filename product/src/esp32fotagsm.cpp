@@ -265,7 +265,6 @@ bool esp32FOTAGSM::execHTTPcheck()
 		}
 		else
 		{
-			// Hinh nhu cho nay ok
 			// Serial.println("http err:" + String(err));
 		}
 		

@@ -9,6 +9,7 @@
 #define PWR_PIN             4
 
 #define uS_TO_S_FACTOR      1000000ULL
+#define mS_TO_S_FACTOR      1000ULL
 
 
 #ifdef DEBUG
@@ -27,5 +28,13 @@ void blink(int interval, int duration) {
         digitalWrite(LED_PIN, HIGH);
         delay(interval);
     }
+}
+
+float readBattery()
+{
+    int vref = 1100;
+    uint16_t volt = analogRead(BAT_ADC);
+    float battery_voltage = ((float)volt / 4095.0) * 2.0 * 3.3 * (vref);
+    return battery_voltage;
 }
 
