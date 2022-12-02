@@ -211,9 +211,10 @@ void setup()
 
 void loop()
 {
-
+  digitalWrite(PIN_DTR, LOW);
   if(!mqtt.loop()) {
     SerialMon.println("client not connected");
+    mqttConnect();
   } else {
     SerialMon.println("client loop");
     mqtt.publish(topicTest, "test");
@@ -262,7 +263,7 @@ void loop()
       }
       String message = devID + "," + String(millis()) + ",lat:" + String(lat) + ",lon:" + String(lon);
       if(mqtt.loop()) {
-      mqtt.publish(topicGnss, message.c_str());
+        mqtt.publish(topicGnss, message.c_str());
       } else {
         mqttConnect();
         mqtt.publish(topicGnss, message.c_str());
