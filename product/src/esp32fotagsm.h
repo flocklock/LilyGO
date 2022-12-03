@@ -6,14 +6,17 @@
 
 #ifndef esp32FOTAGSM_h
 #define esp32FOTAGSM_h
+#endif
 
 #include "Arduino.h"
+#ifndef MODEM_HEADER
+#include <modemHeader.hpp>
+#endif
 
 #if (!defined(SRC_TINYGSMCLIENT_H_))
 #define TINY_GSM_MODEM_SIM7000
 #include <TinyGsmClient.h>
 #endif  // SRC_TINYGSMCLIENT_H_
-#include <StreamDebugger.h>
 
 
 class esp32FOTAGSM
@@ -29,9 +32,9 @@ public:
   int checkPORT;		// 80  
   String checkRESOURCE; // /customer01/firmware.json
   void setModem(TinyGsm& modem);
+  String getDeviceID();
 
 private:
-  String getDeviceID();
   String _firwmareType;
   int _firwmareVersion;
   String _host;
@@ -39,5 +42,3 @@ private:
   int _port;
   TinyGsm*	_modem;
 };
-
-#endif

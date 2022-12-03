@@ -10,11 +10,14 @@
 #include <StreamDebugger.h>
 
 #ifdef DUMP_AT_COMMANDS
-StreamDebugger debugger(SerialAT, SerialMon);
-TinyGsm modem(debugger);
+extern StreamDebugger debugger;
+extern TinyGsm modem;
 #else
 TinyGsm modem(SerialAT);
 #endif
+
+extern TinyGsmClient clientFOTA;
+extern TinyGsmClient clientMQTT;
 
 
 

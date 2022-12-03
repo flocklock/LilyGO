@@ -3,6 +3,7 @@
 #include <utils.hpp>
 #include <location.hpp>
 #include <mqtt.hpp>
+#include <fotaHeaders.h>
 
 int deviceId = 1;
 bool update = false;
@@ -15,126 +16,14 @@ unsigned long lastFotaCheck = 0;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
-String devID;
+String deviceID = "xxx";
+String versionStr = "2";
+int accCounter = 0;
 
 
 int sleep_period = 10;
-/*
-void setup() {
-  pinMode(PIN_DTR, OUTPUT);
-  digitalWrite(PIN_DTR, LOW);
-  SerialMon.begin(115200);
-  //D(Serial.begin(115200);)
-  if(accel.begin()) {SerialMon.println("acc sensor found");}
-
-  accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b00000000);
-  accel.setRange(ADXL345_RANGE_16_G);
-  accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
-  accel.writeRegister(ADXL345_REG_FIFO_CTL, 0b10000000);
-  accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b10000000);
-  accel.writeRegister(ADXL345_REG_INT_MAP, 0b00000000);
-
-  //attachInterrupt(ACC_INT1, dummyFNC(), HIGH);
-
-    delay(10);
-
-    // Set LED OFF
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, HIGH);
-
-    modemPowerOn();
-
-    SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
-
-    Serial.println("");
-    Serial.println("To initialize the network test, please make sure your GPS");
-    Serial.println("antenna has been connected to the GPS port on the board.");
-    Serial.println("\n\n");
-
-    delay(10000);
-}
-
-void loop() {
-  if (!modem.testAT()) {
-        Serial.println("Failed to restart modem, attempting to continue without restarting");
-        modemRestart();
-        return;
-    }
-
-    Serial.println("Start positioning . Make sure to locate outdoors.");
-    Serial.println("The blue indicator light flashes to indicate positioning.");
-
-    enableGPS();
-
-    float lat,  lon;
-    while (1) {
-        if (modem.getGPS(&lat, &lon)) {
-            Serial.println("The location has been locked, the latitude and longitude are:");
-            Serial.print("latitude:"); Serial.println(lat);
-            Serial.print("longitude:"); Serial.println(lon);
-            break;
-        }
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        delay(2000);
-    }
-
-    if (modem.testAT()) {
-        Serial.println("Modem ok");
-    }
-    modem.sendAT("+CSCLK=1");
-    digitalWrite(PIN_DTR, HIGH);
-    delay(3000);
-    digitalWrite(PIN_DTR, LOW);
 
 
-
-    disableGPS();
-    delay(1000);
-    enableGPS();
-    while (1) {
-        if (modem.getGPS(&lat, &lon)) {
-            Serial.println("The second location has been locked, the latitude and longitude are:");
-            Serial.print("latitude:"); Serial.println(lat);
-            Serial.print("longitude:"); Serial.println(lon);
-            break;
-        }
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        delay(2000);
-    }
-
-    Serial.println("");
-    Serial.println("After the network test is complete, please enter the  ");
-    Serial.println("AT command in the serial terminal.");
-    Serial.println("\n\n");
-
-    while (1) {
-        while (SerialAT.available()) {
-            SerialMon.write(SerialAT.read());
-        }
-        while (SerialMon.available()) {
-            SerialAT.write(SerialMon.read());
-        }
-    }
-
-
-  esp_sleep_enable_timer_wakeup(10 * uS_TO_S_FACTOR);
-  esp_light_sleep_start();
-  for (int i = 0; i < 31; i++) {
-    e[i] = accel.readAccData(ADXL345_REG_DATAX0);
-    D(Serial.println(String("reading data: ") + String(e[i].X, 2));)
-  }
-  
-}
-*/
-
-#include <fotaHeaders.h>
-
-void IRAM_ATTR onAccTimer() {
-  readAccFlag = true;
-}
-void IRAM_ATTR onGnssTimer() {
-  readGnssFlag = true;
-}
 
 void setup()
 {
@@ -145,6 +34,7 @@ void setup()
     D(SerialMon.flush();)
     esp_deep_sleep_start();
   }
+  
 
   pinMode(PIN_DTR, OUTPUT);
   digitalWrite(PIN_DTR, LOW);
@@ -165,8 +55,10 @@ void setup()
   delay(3000);
   setupFOTAGSM();
   SerialMon.println("modem set");
+  delay(1000);
+  
 
-  devID = iccid.substring(iccid.length() - 5, iccid.length());
+
  
   mqtt.setServer(broker, mqttPort);
   mqtt.setKeepAlive(7200);
@@ -193,17 +85,8 @@ void setup()
   accel.writeRegister(ADXL345_REG_FIFO_CTL, 0b10000000);
   accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b10000000);
   accel.writeRegister(ADXL345_REG_INT_MAP, 0b00000000);
-/*
-  accTimer = timerBegin(0, 80, true);
-  timerAttachInterrupt(accTimer, onAccTimer, true);
-  timerAlarmWrite(accTimer, 10 * uS_TO_S_FACTOR, true);
-  timerAlarmEnable(accTimer);
 
-  gnssTimer = timerBegin(1, 80, true);
-  timerAttachInterrupt(gnssTimer, onGnssTimer, true);
-  timerAlarmWrite(gnssTimer, 20 * uS_TO_S_FACTOR, true);
-  timerAlarmEnable(gnssTimer);
-*/
+  deviceID = fota.getDeviceID();
   delay(1000);
   setCpuFrequencyMhz(80);
   delay(1000);
@@ -211,16 +94,11 @@ void setup()
 
 void loop()
 {
-  digitalWrite(PIN_DTR, LOW);
-  if(!mqtt.loop()) {
-    SerialMon.println("client not connected");
-    mqttConnect();
-  } else {
-    SerialMon.println("client loop");
-    mqtt.publish(topicTest, "test");
+  for (int i = 0; i < 32; i++) {
+    e[i] = accel.readAccData(ADXL345_REG_DATAX0);
+    accCounter++;
   }
-  
-  
+
   battery_voltage = readBattery();
   if(battery_voltage > 0.1 && battery_voltage < 2.7) {
     esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
@@ -228,7 +106,7 @@ void loop()
     esp_deep_sleep_start();
   }
 
-  if( !lastFotaCheck || millis() - lastFotaCheck > 600 * mS_TO_S_FACTOR) {
+  if( !lastFotaCheck || millis() - lastFotaCheck > 3600 * mS_TO_S_FACTOR) {
     D(SerialMon.println("Checking server");)
     digitalWrite(PIN_DTR, LOW);
     delay(1000);
@@ -236,7 +114,7 @@ void loop()
   if (updatedNeeded)
   {
     D(SerialMon.println("Got new update");)
-    fota.execOTA();    
+    fota.execOTA();
   }
   else
   {    
@@ -245,42 +123,46 @@ void loop()
     lastFotaCheck = millis();
   }
 
-  if(!lastGnssCheck || millis() - lastGnssCheck > 30 * mS_TO_S_FACTOR) {
+  if(!lastGnssCheck || millis() - lastGnssCheck > 1200 * mS_TO_S_FACTOR) {
     digitalWrite(PIN_DTR, LOW);
-        delay(10);
-        enableGPS();
+    delay(10);
+    enableGPS();
 
-        float lat = 0,  lon = 0;
-        for(int i = 0; i < 60; i++) {
-          if (modem.getGPS(&lat, &lon)) {
-            D(Serial.println("The location has been locked, the latitude and longitude are:");)
-            D(Serial.print("latitude:"); Serial.println(lat);)
-            D(Serial.print("longitude:"); Serial.println(lon);)
-            break;
-        }
-        D(Serial.println("No fix");)
-        delay(1000);
+    float lat = 0,  lon = 0;
+    for(int i = 0; i < 80; i++) {
+      if (modem.getGPS(&lat, &lon)) {
+        D(Serial.println("The location has been locked, the latitude and longitude are:");)
+        D(Serial.print("latitude:"); Serial.println(lat);)
+        D(Serial.print("longitude:"); Serial.println(lon);)
+        break;
       }
-      String message = devID + "," + String(millis()) + ",lat:" + String(lat) + ",lon:" + String(lon);
-      if(mqtt.loop()) {
-        mqtt.publish(topicGnss, message.c_str());
-      } else {
-        mqttConnect();
-        mqtt.publish(topicGnss, message.c_str());
-      }
-
-      disableGPS();
-      
-
+      D(Serial.println("No fix");)
+      delay(1000);
+    }
+    String message = "luk," + versionStr + "," 
+    + deviceID.substring(deviceID.length() - 5, deviceID.length())
+     + "," + String(millis()) + "," + String(lat,5) + "," + String(lon,5) 
+     + "," + String(battery_voltage,0) + "," + String(accCounter);
+    D(SerialMon.println(message);)
+    if(mqtt.loop()) {
+      D(SerialMon.println("mqtt loop");)
+      mqtt.publish(topicLukas, message.c_str());
+      D(SerialMon.println("mqtt published");)
+    } else {
+      mqttConnect();
+      D(SerialMon.println("mqtt reconnected");)
+      mqtt.publish(topicLukas, message.c_str());
+    }
+    disableGPS();
     digitalWrite(PIN_DTR, HIGH);
     lastGnssCheck = millis();
     }
+    
 
   modem.sendAT("+CSCLK=1");
   delay(10);
   digitalWrite(PIN_DTR, HIGH);
-  esp_sleep_enable_timer_wakeup(30 * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(1200 * uS_TO_S_FACTOR);
   D(SerialMon.flush();)
   esp_light_sleep_start();
-  
 }

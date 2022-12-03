@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../newLily/mqtt_live_demo"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.tpp": "cpp",
+			"streambuf": "cpp"
+		}
+	}
+}

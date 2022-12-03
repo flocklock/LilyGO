@@ -44,8 +44,6 @@ void esp32FOTAGSM::execOTA()
 	// https://github.com/blynkkk/blynk-library/blob/master/src/Adapters/BlynkGsmClient.h#L99
 	// WiFiClient client;
 	// TinyGsmClient client(_modem); => not able to compile
-	TinyGsmClient client;
-	bool isClientOK = client.init(_modem);
 	// Serial.println("isClientOK: "+ String(isClientOK));
 	
     int contentLength = 0;
@@ -58,10 +56,10 @@ void esp32FOTAGSM::execOTA()
 	// Written only : 0/564608. Retry?
 	// Error Occurred. Error #: 8
 	// client.setTimeout(5000); // Kevin, a bit longer wait
-	client.setTimeout(60000); // Kevin, muchlonger wait
+	clientFOTA.setTimeout(60000); // Kevin, muchlonger wait
 	
     // Connect to Webserver
-    if (client.connect(_host.c_str(), _port))
+    if (clientFOTA.connect(_host.c_str(), _port))
     {
 		// client.setTimeout(60000); // Kevin, longer wait // REMOVED
 		
@@ -70,28 +68,28 @@ void esp32FOTAGSM::execOTA()
         Serial.println("Fetching Bin: " + String(_bin));
 
         // Get the contents of the bin file
-        client.print(String("GET ") + _bin + " HTTP/1.1\r\n" +
+        clientFOTA.print(String("GET ") + _bin + " HTTP/1.1\r\n" +
                      "Host: " + _host + "\r\n" +
                      "Cache-Control: no-cache\r\n" +
                      "Connection: close\r\n\r\n");
 
         unsigned long timeout = millis();
-        while (client.available() == 0)
+        while (clientFOTA.available() == 0)
         {
             // if (millis() - timeout > 5000) // CHANGE 
 			if (millis() - timeout > 60000) // Kevin: More timeout
             {
                 Serial.println("Client Timeout !");
-                client.stop();
+                clientFOTA.stop();
                 return;
             }
         }
 
-        while (client.available())
+        while (clientFOTA.available())
         {
             String header, headerValue;
             // read line till /n
-            String line = client.readStringUntil('\n');
+            String line = clientFOTA.readStringUntil('\n');
             // remove space, to check if the line is end of headers
             line.trim();
 
@@ -108,7 +106,7 @@ void esp32FOTAGSM::execOTA()
                 if (line.indexOf("200") < 0)
                 {
                     Serial.println("Got a non 200 status code from server. Exiting OTA Update.");
-                    client.stop();
+                    clientFOTA.stop();
                     break;
                 }
                 gotHTTPStatus = true;
@@ -142,6 +140,7 @@ void esp32FOTAGSM::execOTA()
             }
         }
     }
+    
     else
     {
         // Connect to webserver failed
@@ -151,7 +150,7 @@ void esp32FOTAGSM::execOTA()
         // retry??
         // execOTA();
     }
-
+    clientFOTA.stop();
     // Check what is the contentLength and if content type is `application/octet-stream`
     Serial.println("contentLength : " + String(contentLength) + ", isValidContentType : " + String(isValidContentType));
 
@@ -167,7 +166,7 @@ void esp32FOTAGSM::execOTA()
             Serial.println("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
             // No activity would appear on the Serial monitor
             // So be patient. This may take 2 - 5mins to complete
-            size_t written = Update.writeStream(client);
+            size_t written = Update.writeStream(clientFOTA);
 
             if (written == contentLength)
             {
@@ -204,13 +203,13 @@ void esp32FOTAGSM::execOTA()
             // Understand the partitions and
             // space availability
             Serial.println("Not enough space to begin OTA");
-            client.flush();
+            clientFOTA.flush();
         }
     }
     else
     {
         Serial.println("There was no content in the response");
-        client.flush();
+        clientFOTA.flush();
     }
 }
 
@@ -246,20 +245,21 @@ bool esp32FOTAGSM::execHTTPcheck()
 
         // http.begin(useURL);        //Specify the URL
 		// TinyGsmClient client((TinyGsm*)_modem);		// Kevin // Set o day bi bao loi. La thiet
-		TinyGsmClient client;
-		bool isClientOK = client.init(_modem);		// Kevin: return 1 => OK
+    	// Kevin: return 1 => OK
 		// Serial.println("isClientOK: "+ String(isClientOK));
 		
 		// HttpClient    http(client, _host, _port); // Kevin
-		HttpClient    http(client, checkHOST, checkPORT); // Kevin
+		HttpClient    http(clientFOTA, checkHOST, checkPORT); // Kevin
         // int httpCode = http.GET(); //Make the request
 		// Serial.println("useURL: " + useURL);
 		// Serial.println("GPRS connected");
 				
 		int err = http.get(useURL);  // Kevin
+
 		// Serial.println("TinyGsmClient: " + String(client.connected()));
 		if (err != 0) {
 			Serial.println(F("failed to connect"));
+            http.stop();
 			delay(10000);
 			return false; // Error, nothing to update
 		}
@@ -269,13 +269,15 @@ bool esp32FOTAGSM::execHTTPcheck()
 		}
 		
 		int httpCode = http.responseStatusCode();
+        
 		// Serial.println("httpCode:" + String(httpCode));
 		
         if (httpCode == 200)
         { //Check is a file was returned
 
             // String payload = http.getString(); // CHANGE 
-			String payload = http.responseBody();	// CHANGE
+			String payload = http.responseBody();
+            	// CHANGE
 
             int str_len = payload.length() + 1;
             char JSONMessage[str_len];
@@ -287,7 +289,9 @@ bool esp32FOTAGSM::execHTTPcheck()
             if (err)
             { //Check for errors in parsing
                 Serial.println("Parsing failed");
+                
                 delay(5000);
+                
                 return false;
             }
 
@@ -304,7 +308,7 @@ bool esp32FOTAGSM::execHTTPcheck()
             _bin = jsbin;
 
             String fwtype(pltype);
-
+            http.stop();
             if (plversion > _firwmareVersion && fwtype == _firwmareType)
             {
                 return true;
@@ -320,6 +324,7 @@ bool esp32FOTAGSM::execHTTPcheck()
             // Serial.println("Error on HTTP request");
 			Serial.print("Error on HTTP request. Error code:");
 			Serial.println(httpCode);
+            http.stop();
             return false;
         }
 

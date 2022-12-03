@@ -8,9 +8,9 @@ uint16_t mqttPort = 1883;
 
 const char* topicTest       = "fl/test";
 const char* topicGnss      = "fl/gnss";
+const char* topicLukas = "fl/lukas";
 
-TinyGsmClient client(modem, 1);
-PubSubClient  mqtt(client);
+PubSubClient  mqtt(clientMQTT);
 
 uint32_t lastReconnectAttempt = 0;
 

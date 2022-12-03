@@ -14,8 +14,8 @@
 #include <modemHeader.hpp>
 #endif
 
-const char *boardModel = "flocklock";                    // TO CHANGE
-int boardCurrentVersion = 1; // The firmware version      // TO CHANGE
+const char *boardModel = "flocklock";  
+int boardCurrentVersion = 2; // The firmware version
 
 // To define firmware type and version
 esp32FOTAGSM fota(boardModel, boardCurrentVersion);
@@ -23,7 +23,7 @@ esp32FOTAGSM fota(boardModel, boardCurrentVersion);
 // To define link to check update json
 #define esp32FOTAGSM_checkHOST      "147.251.115.100"         // TO CHANGE
 #define esp32FOTAGSM_checkPORT      8000                   // TO CHANGE, HTTP ONLY
-#define esp32FOTAGSM_checkRESOURCE  "/test.json" // TO CHANGE
+#define esp32FOTAGSM_checkRESOURCE  "/lukas2.json" // TO CHANGE
 
 // ============== GSM ===============
 #if (!defined(SRC_TINYGSMCLIENT_H_))
@@ -38,7 +38,7 @@ const char apn[]  = "lpwa.vodafone.com";    // TO CHANGE
 const char user[] = "";      // TO CHANGE
 const char pass[] = "";      // TO CHANGE
 bool gprs_connected = false;
-String iccid = "000001";
+String iccid = "";
 
 bool reply = false;
 
@@ -96,8 +96,7 @@ void setupGSM()
   
   modem.sendAT("+CCID");
   modem.waitResponse(10000L, iccid);
-  SerialMon.print("iccid is: ");
-  SerialMon.println(iccid);
+
   modem.init();
 
 
