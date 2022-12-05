@@ -5,7 +5,6 @@
 #include <mqtt.hpp>
 #include <fotaHeaders.h>
 
-int deviceId = 1;
 bool update = false;
 bool readAccFlag = false;
 bool readGnssFlag = true;
@@ -16,37 +15,37 @@ unsigned long lastFotaCheck = 0;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
-String deviceID = "xxx";
-String versionStr = "2";
-int accCounter = 0;
+String deviceID = "xxxxx";
+String versionStr = "3";
+#define gnssInterval 600
+#define accInterval 20
+#define  activitySize 2 * gnssInterval / accInterval
 
-
-int sleep_period = 10;
-
+int activityPointer = 0;
+float lastActivity[activitySize];
+int activityCounter[ACTIVITY::COUNT];
+float totalActivity = 0;
 
 
 void setup()
 {
-  if(readBattery() > 0.1 && readBattery() < 2.7) {
-    modemPowerOff();
-    delay(10);
-    esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
-    D(SerialMon.flush();)
-    esp_deep_sleep_start();
-  }
+  battery_voltage = readBattery();
+  lowBatteryCheck(battery_voltage);
   
+  deviceID = fota.getDeviceID();
+  deviceID = deviceID.substring(deviceID.length() - 5, deviceID.length());
 
   pinMode(PIN_DTR, OUTPUT);
   digitalWrite(PIN_DTR, LOW);
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+  digitalWrite(LED_PIN, HIGH);
   D(SerialMon.begin(115200);)
   D(delay(10);)
   
   D(SerialMon.print("Current version: ");) 
   D(SerialMon.println(boardCurrentVersion);)
   D(SerialMon.print("Device id: ");) 
-  D(SerialMon.println(deviceId);)
+  D(SerialMon.println(deviceID);)
 
   D(SerialMon.println(String("battery: ") + String(readBattery()));)
  if(accel.begin()) {D(SerialMon.println("acc sensor found");)}
@@ -74,11 +73,9 @@ void setup()
   digitalWrite(PIN_DTR, LOW);
   digitalWrite(LED_PIN, HIGH);
 
-
-  SerialMon.begin(115200);
-  //D(Serial.begin(115200);)
+  D(SerialMon.begin(115200);)
  
-  delay(1000);
+  delay(100);
   accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b00000000);
   accel.setRange(ADXL345_RANGE_16_G);
   accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
@@ -86,7 +83,7 @@ void setup()
   accel.writeRegister(ADXL345_REG_INT_ENABLE, 0b10000000);
   accel.writeRegister(ADXL345_REG_INT_MAP, 0b00000000);
 
-  deviceID = fota.getDeviceID();
+  
   delay(1000);
   setCpuFrequencyMhz(80);
   delay(1000);
@@ -96,21 +93,22 @@ void loop()
 {
   for (int i = 0; i < 32; i++) {
     e[i] = accel.readAccData(ADXL345_REG_DATAX0);
-    accCounter++;
   }
+  if(activityPointer >= activitySize)
+    activityPointer = 0;
+  lastActivity[activityPointer] = stdDev(e).stdDevX;
+  activityPointer++;
+  activityCounter[evaluate(e)]++;
 
   battery_voltage = readBattery();
-  if(battery_voltage > 0.1 && battery_voltage < 2.7) {
-    esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
-    D(SerialMon.flush();)
-    esp_deep_sleep_start();
-  }
+  lowBatteryCheck(battery_voltage);
 
   if( !lastFotaCheck || millis() - lastFotaCheck > 3600 * mS_TO_S_FACTOR) {
     D(SerialMon.println("Checking server");)
     digitalWrite(PIN_DTR, LOW);
     delay(1000);
     bool updatedNeeded = fota.execHTTPcheck();
+    modem.sendAT("+CSCLK=1");
   if (updatedNeeded)
   {
     D(SerialMon.println("Got new update");)
@@ -123,15 +121,20 @@ void loop()
     lastFotaCheck = millis();
   }
 
-  if(!lastGnssCheck || millis() - lastGnssCheck > 1200 * mS_TO_S_FACTOR) {
+  if(!lastGnssCheck || millis() - lastGnssCheck > gnssInterval * mS_TO_S_FACTOR) {
     digitalWrite(PIN_DTR, LOW);
     delay(10);
     enableGPS();
 
+    
+    for(int i = 0; i < activityPointer; i++) {
+      totalActivity += lastActivity[i];
+    }
+    
     float lat = 0,  lon = 0;
     for(int i = 0; i < 80; i++) {
       if (modem.getGPS(&lat, &lon)) {
-        D(Serial.println("The location has been locked, the latitude and longitude are:");)
+        D(Serial.println("The location has been locked");)
         D(Serial.print("latitude:"); Serial.println(lat);)
         D(Serial.print("longitude:"); Serial.println(lon);)
         break;
@@ -139,30 +142,36 @@ void loop()
       D(Serial.println("No fix");)
       delay(1000);
     }
-    String message = "luk," + versionStr + "," 
-    + deviceID.substring(deviceID.length() - 5, deviceID.length())
+    String evaluated;
+    for(int i = 0; i < ACTIVITY::COUNT - 1; i++) {
+      evaluated += String(activityCounter[i]) + '-';
+      activityCounter[i] = 0;
+    }
+    String message = String(name) + ',' + versionStr + "," + deviceID
      + "," + String(millis()) + "," + String(lat,5) + "," + String(lon,5) 
-     + "," + String(battery_voltage,0) + "," + String(accCounter);
+     + "," + String(battery_voltage,0) + "," + String(totalActivity / (activityPointer+1), 3)
+     + "," + evaluated;
     D(SerialMon.println(message);)
     if(mqtt.loop()) {
       D(SerialMon.println("mqtt loop");)
-      mqtt.publish(topicLukas, message.c_str());
+      mqtt.publish(topic, message.c_str());
       D(SerialMon.println("mqtt published");)
     } else {
-      mqttConnect();
+      mqttConnect(deviceID);
       D(SerialMon.println("mqtt reconnected");)
-      mqtt.publish(topicLukas, message.c_str());
+      mqtt.publish(topic, message.c_str());
     }
     disableGPS();
-    digitalWrite(PIN_DTR, HIGH);
+    modem.sendAT("+CSCLK=1");
+    activityPointer = 0;
+    totalActivity = 0;
     lastGnssCheck = millis();
+    delay(1000);
     }
     
-
-  modem.sendAT("+CSCLK=1");
-  delay(10);
+  delay(1);
   digitalWrite(PIN_DTR, HIGH);
-  esp_sleep_enable_timer_wakeup(1200 * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(accInterval * uS_TO_S_FACTOR);
   D(SerialMon.flush();)
   esp_light_sleep_start();
 }

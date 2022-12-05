@@ -10,7 +10,8 @@
 	"settings": {
 		"files.associations": {
 			"*.tpp": "cpp",
-			"streambuf": "cpp"
+			"streambuf": "cpp",
+			"random": "cpp"
 		}
 	}
 }

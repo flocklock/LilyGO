@@ -23,7 +23,7 @@ esp32FOTAGSM fota(boardModel, boardCurrentVersion);
 // To define link to check update json
 #define esp32FOTAGSM_checkHOST      "147.251.115.100"         // TO CHANGE
 #define esp32FOTAGSM_checkPORT      8000                   // TO CHANGE, HTTP ONLY
-#define esp32FOTAGSM_checkRESOURCE  "/lukas2.json" // TO CHANGE
+#define esp32FOTAGSM_checkRESOURCE  "/lukas3.json" // TO CHANGE
 
 // ============== GSM ===============
 #if (!defined(SRC_TINYGSMCLIENT_H_))

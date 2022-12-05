@@ -72,9 +72,9 @@ typedef enum {
 } dataRate_t;
 
   struct event {
-    float X;
-    float Y;
-    float Z;
+    float X = 0;
+    float Y = 0;
+    float Z = 0;
   };
 
 class Accelerometer {

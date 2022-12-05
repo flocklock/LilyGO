@@ -1,6 +1,11 @@
 #ifndef MODEM_HEADER
 #include <modemHeader.hpp>
 #endif
+#ifdef DEBUG
+#  define D(x) x
+#else
+#  define D(x)
+#endif // DEBUG
 
 
 void enableGPS()
@@ -12,9 +17,11 @@ void enableGPS()
     if (modem.waitResponse(10000L) != 1) {
         DBG(" SGPIO=0,4,1,1 false ");
     }
-    delay(200);
-    if(modem.enableGPS())
-      SerialMon.println("GPS enabled");
+    delay(1000);
+    if(modem.enableGPS()) {
+      D(SerialMon.println("GPS enabled");)
+      return;
+    }
 }
 void disableGPS()
 {
@@ -26,8 +33,10 @@ void disableGPS()
         DBG(" SGPIO=0,4,1,0 false ");
     }
     delay(200);
-    if(modem.disableGPS())
-      SerialMon.println("GPS disabled");
+    if(modem.disableGPS()) {
+      D(SerialMon.println("GPS disabled");)
+      return;
+    }
 
 }
 
