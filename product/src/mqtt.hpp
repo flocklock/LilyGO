@@ -13,10 +13,11 @@
 #define topicTest2  "fl/test2"
 #define topicGnss   "fl/gnss"
 #define topicLukas  "fl/lukas"
+#define topicTou    "fl/tou"
 #define topicApp    "fl/app"
 
-char* topic = topicLukas;
-char* name = "Lukas";
+char* topic = topicTou;
+char* name = "tou";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;

@@ -11,7 +11,7 @@ bool readGnssFlag = true;
 hw_timer_t *accTimer = NULL;
 hw_timer_t *gnssTimer = NULL;
 unsigned long lastGnssCheck = 0;
-unsigned long lastFotaCheck = 0;
+unsigned long lastFotaCheck = 1;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
@@ -161,7 +161,11 @@ void loop()
       D(SerialMon.println("mqtt reconnected");)
       mqtt.publish(topic, message.c_str());
     }
-    disableGPS();
+    //disableGPS();
+    modem.sendAT("+SGPIO=0,4,1,0");
+    if (modem.waitResponse(1000L) != 1) {
+        DBG(" SGPIO=0,4,1,0 false ");
+    }
     modem.sendAT("+CSCLK=1");
     activityPointer = 0;
     totalActivity = 0;
