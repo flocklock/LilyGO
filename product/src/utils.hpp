@@ -1,6 +1,6 @@
 #define BAT_ADC     35
 #define LED_PIN     12
-#define DEBUG
+//#define DEBUG
 
 #define UART_BAUD           9600
 #define PIN_DTR             25

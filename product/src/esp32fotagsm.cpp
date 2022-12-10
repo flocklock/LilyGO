@@ -150,7 +150,7 @@ void esp32FOTAGSM::execOTA()
         // retry??
         // execOTA();
     }
-    clientFOTA.stop();
+    //clientFOTA.stop();
     // Check what is the contentLength and if content type is `application/octet-stream`
     Serial.println("contentLength : " + String(contentLength) + ", isValidContentType : " + String(isValidContentType));
 

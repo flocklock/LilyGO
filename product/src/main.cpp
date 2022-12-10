@@ -16,9 +16,9 @@ unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
-String versionStr = "3";
-#define gnssInterval 600
-#define accInterval 20
+String versionStr = "1";
+#define gnssInterval 120
+#define accInterval 10
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -143,7 +143,7 @@ void loop()
       delay(1000);
     }
     String evaluated;
-    for(int i = 0; i < ACTIVITY::COUNT - 1; i++) {
+    for(int i = 0; i < ACTIVITY::COUNT; i++) {
       evaluated += String(activityCounter[i]) + '-';
       activityCounter[i] = 0;
     }
