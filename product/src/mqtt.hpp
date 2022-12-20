@@ -18,7 +18,7 @@
 #define topicOvce   "fl/ovce"
 
 char* topic = topicLukas;
-char* name = "lukNew";
+char* name = "lukNew1";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;

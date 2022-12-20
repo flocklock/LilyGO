@@ -11,13 +11,13 @@ bool readGnssFlag = true;
 hw_timer_t *accTimer = NULL;
 hw_timer_t *gnssTimer = NULL;
 unsigned long lastGnssCheck = 0;
-unsigned long lastFotaCheck = 1;
+unsigned long lastFotaCheck = 0;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = "1";
-#define gnssInterval 120
+#define gnssInterval 1800
 #define accInterval 10
 #define  activitySize 2 * gnssInterval / accInterval
 
