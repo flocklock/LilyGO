@@ -19,6 +19,7 @@ String deviceID = "xxxxx";
 String versionStr = "1";
 #define gnssInterval 1800
 #define accInterval 10
+#define fotaInterval 43200
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -103,7 +104,7 @@ void loop()
   battery_voltage = readBattery();
   lowBatteryCheck(battery_voltage);
 
-  if( !lastFotaCheck || millis() - lastFotaCheck > 3600 * mS_TO_S_FACTOR) {
+  if( !lastFotaCheck || millis() - lastFotaCheck > fotaInterval * mS_TO_S_FACTOR) {
     D(SerialMon.println("Checking server");)
     digitalWrite(PIN_DTR, LOW);
     delay(1000);
