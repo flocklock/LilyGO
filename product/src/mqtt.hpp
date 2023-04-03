@@ -17,9 +17,11 @@
 #define topicApp    "fl/app"
 #define topicOvce   "fl/ovce"
 #define topicLaz    "fl/laz"
+#define topicItaly  "fl/it"
+#define topicHurta  "fl/hur"
 
-char* topic = topicLaz;
-char* name = "laz";
+char* topic = topicHurta;
+char* name = "hur1";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;

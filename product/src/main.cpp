@@ -1,3 +1,4 @@
+#define DEBUG
 #include <Arduino.h>
 #include <acc.hpp>
 #include <utils.hpp>
@@ -11,15 +12,15 @@ bool readGnssFlag = true;
 hw_timer_t *accTimer = NULL;
 hw_timer_t *gnssTimer = NULL;
 unsigned long lastGnssCheck = 0;
-unsigned long lastFotaCheck = 0;
+unsigned long lastFotaCheck = 1;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = "1";
-#define gnssInterval 1800
-#define accInterval 10
-#define fotaInterval 43200
+#define gnssInterval 28800
+#define accInterval 20
+#define fotaInterval 86400
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -88,10 +89,14 @@ void setup()
   delay(1000);
   setCpuFrequencyMhz(80);
   delay(1000);
+  disableGPS();
 }
 
 void loop()
 {
+  battery_voltage = readBattery();
+  lowBatteryCheck(battery_voltage);
+  
   for (int i = 0; i < 32; i++) {
     e[i] = accel.readAccData(ADXL345_REG_DATAX0);
   }
@@ -101,8 +106,7 @@ void loop()
   activityPointer++;
   activityCounter[evaluate(e)]++;
 
-  battery_voltage = readBattery();
-  lowBatteryCheck(battery_voltage);
+  
 
   if( !lastFotaCheck || millis() - lastFotaCheck > fotaInterval * mS_TO_S_FACTOR) {
     D(SerialMon.println("Checking server");)
@@ -113,6 +117,7 @@ void loop()
   if (updatedNeeded)
   {
     D(SerialMon.println("Got new update");)
+    modem.sendAT("+CSCLK=0");
     fota.execOTA();
   }
   else
@@ -125,7 +130,7 @@ void loop()
   if(!lastGnssCheck || millis() - lastGnssCheck > gnssInterval * mS_TO_S_FACTOR) {
     digitalWrite(PIN_DTR, LOW);
     delay(10);
-    enableGPS();
+    //enableGPS();
 
     
     for(int i = 0; i < activityPointer; i++) {
@@ -133,6 +138,7 @@ void loop()
     }
     
     float lat = 0,  lon = 0;
+    /*
     for(int i = 0; i < 80; i++) {
       if (modem.getGPS(&lat, &lon)) {
         D(Serial.println("The location has been locked");)
@@ -143,6 +149,7 @@ void loop()
       D(Serial.println("No fix");)
       delay(1000);
     }
+    */
     String evaluated;
     for(int i = 0; i < ACTIVITY::COUNT; i++) {
       evaluated += String(activityCounter[i]) + '-';
@@ -153,6 +160,7 @@ void loop()
      + "," + String(battery_voltage,0) + "," + String(totalActivity / (activityPointer+1), 3)
      + "," + evaluated;
     D(SerialMon.println(message);)
+    delay(2000);
     if(mqtt.loop()) {
       D(SerialMon.println("mqtt loop");)
       mqtt.publish(topic, message.c_str());
@@ -162,11 +170,13 @@ void loop()
       D(SerialMon.println("mqtt reconnected");)
       mqtt.publish(topic, message.c_str());
     }
-    //disableGPS();
+    /*
+    disableGPS();
     modem.sendAT("+SGPIO=0,4,1,0");
     if (modem.waitResponse(1000L) != 1) {
         DBG(" SGPIO=0,4,1,0 false ");
     }
+    */
     modem.sendAT("+CSCLK=1");
     activityPointer = 0;
     totalActivity = 0;

@@ -66,9 +66,9 @@ float readBattery()
     return battery_voltage;
 }
 void lowBatteryCheck(float voltage) {
-  if(voltage > 0.1 && voltage < 3.0) {
+  if(voltage > 0.1 && voltage < 3.3) {
     delay(100);
-    if(readBattery() > 3.0)
+    if(readBattery() > 3.3)
         return;
     esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
     esp_deep_sleep_start();
