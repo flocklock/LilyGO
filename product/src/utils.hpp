@@ -11,6 +11,8 @@
 #define uS_TO_S_FACTOR      1000000ULL
 #define mS_TO_S_FACTOR      1000ULL
 
+#define SerialMon Serial
+
 #ifdef DEBUG
 #  define D(x) x
 #else
@@ -62,7 +64,8 @@ float readBattery()
 {
     int vref = 1100;
     uint16_t volt = analogRead(BAT_ADC);
-    float battery_voltage = ((float)volt / 4095.0) * 2.0 * 3.3 * (vref);
+    float battery_voltage = ((float)volt / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+    D(SerialMon.print("bat voltage: " ); SerialMon.print("bat voltage: " );)
     return battery_voltage;
 }
 void lowBatteryCheck(float voltage) {
@@ -70,6 +73,8 @@ void lowBatteryCheck(float voltage) {
     delay(100);
     if(readBattery() > 3.3)
         return;
+    modem.sendAT("+CSCLK=1");
+    digitalWrite(PIN_DTR, HIGH);
     esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
     esp_deep_sleep_start();
   }
