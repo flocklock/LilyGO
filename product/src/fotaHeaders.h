@@ -15,7 +15,7 @@
 #endif
 
 const char *boardModel = "flocklock";  
-int boardCurrentVersion = 2; // The firmware version
+int boardCurrentVersion = 1; // The firmware version
 
 // To define firmware type and version
 esp32FOTAGSM fota(boardModel, boardCurrentVersion);
@@ -23,7 +23,7 @@ esp32FOTAGSM fota(boardModel, boardCurrentVersion);
 // To define link to check update json
 #define esp32FOTAGSM_checkHOST      "147.251.115.100"         // TO CHANGE
 #define esp32FOTAGSM_checkPORT      8000                   // TO CHANGE, HTTP ONLY
-#define esp32FOTAGSM_checkRESOURCE  "/hurta3.json" // TO CHANGE
+#define esp32FOTAGSM_checkRESOURCE  "/hub.json" // TO CHANGE
 
 // ============== GSM ===============
 #if (!defined(SRC_TINYGSMCLIENT_H_))
@@ -46,24 +46,21 @@ void setupGSM()
 {
   // =============== GSM ================
   // Set GSM module baud rate
-  SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
+
+  SerialAT.begin(9600, SERIAL_8N1, PIN_RX, PIN_TX);
   delay(500);
   SerialMon.println("\nStarting Up Modem...");
   pinMode(PWR_PIN, OUTPUT);
   pinMode(PIN_DTR, OUTPUT);
   digitalWrite(PIN_DTR, LOW);
 
-  /*
-  digitalWrite(PWR_PIN, HIGH);
-  delay(300);
-  digitalWrite(PWR_PIN, LOW);
-  delay(10000); 
-  */
- modemPowerOn();  
+  modemPowerOn();  
   SerialMon.println("\nStarted");
   delay(6000);
   SerialMon.println("Initializing modem...");
   modem.restart();
+  //SerialAT.println("AT+IPR=115200");
+  //SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
   int i = 10;
   while (i) {
     SerialAT.println("AT");
@@ -103,6 +100,9 @@ void setupGSM()
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
+
+  SerialAT.println("AT+IPR?");
+
 
   // To register to GSM
   SerialMon.print("Waiting for network...");

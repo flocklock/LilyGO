@@ -12,7 +12,7 @@ bool readGnssFlag = true;
 hw_timer_t *accTimer = NULL;
 hw_timer_t *gnssTimer = NULL;
 unsigned long lastGnssCheck = 0;
-unsigned long lastFotaCheck = 1;
+unsigned long lastFotaCheck = 0;
 unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
@@ -49,7 +49,6 @@ void setup()
   D(SerialMon.print("Device id: ");) 
   D(SerialMon.println(deviceID);)
 
-  D(SerialMon.println(String("battery: ") + String(readBattery()));)
  if(accel.begin()) {D(SerialMon.println("acc sensor found");)}
   
   setupGSM();

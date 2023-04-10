@@ -2,12 +2,12 @@
 #define TINY_GSM_MODEM_SIM7000
 #define PWR_PIN             4
 
-#define SerialMon Serial
 #define SerialAT Serial1
 #define DUMP_AT_COMMANDS
 
 #include <TinyGsmClient.h>
 #include <StreamDebugger.h>
+#define SerialMon Serial
 
 #ifdef DUMP_AT_COMMANDS
 extern StreamDebugger debugger;
@@ -18,10 +18,6 @@ TinyGsm modem(SerialAT);
 
 extern TinyGsmClient clientFOTA;
 extern TinyGsmClient clientMQTT;
-
-
-
-
 
 /*
 String readAT(int timeout) {

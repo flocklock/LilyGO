@@ -10,7 +10,9 @@
 // #include <HTTPClient.h>	// CHANGE
 #include <ArduinoHttpClient.h> // Kevin
 #include <Update.h>
-#include "ArduinoJson.h" 
+#include "ArduinoJson.h"
+#define LED_PIN     12
+
 
 
 #if (!defined(SRC_TINYGSMCLIENT_H_))
@@ -40,6 +42,7 @@ static void splitHeader(String src, String &header, String &headerValue)
 // OTA Logic
 void esp32FOTAGSM::execOTA()
 {
+    digitalWrite(LED_PIN, LOW);
 	// CHANGE
 	// https://github.com/blynkkk/blynk-library/blob/master/src/Adapters/BlynkGsmClient.h#L99
 	// WiFiClient client;
@@ -185,7 +188,9 @@ void esp32FOTAGSM::execOTA()
                 if (Update.isFinished())
                 {
                     Serial.println("Update successfully completed. Rebooting.");
+                    
                     ESP.restart();
+
                 }
                 else
                 {

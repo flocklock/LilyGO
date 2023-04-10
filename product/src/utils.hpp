@@ -2,7 +2,7 @@
 #define LED_PIN     12
 //#define DEBUG
 
-#define UART_BAUD           9600
+#define UART_BAUD           115200
 #define PIN_DTR             25
 #define PIN_TX              27
 #define PIN_RX              26
@@ -73,7 +73,7 @@ void lowBatteryCheck(float voltage) {
     delay(100);
     if(readBattery() > 3.3)
         return;
-    modem.sendAT("+CSCLK=1");
+    //modem.sendAT("+CSCLK=1");
     digitalWrite(PIN_DTR, HIGH);
     esp_sleep_enable_timer_wakeup(43200 * uS_TO_S_FACTOR); // sleep half a day
     esp_deep_sleep_start();
