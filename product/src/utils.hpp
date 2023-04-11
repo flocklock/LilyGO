@@ -1,3 +1,5 @@
+#include "esp_task_wdt.h"
+
 #define BAT_ADC     35
 #define LED_PIN     12
 //#define DEBUG
@@ -10,6 +12,8 @@
 
 #define uS_TO_S_FACTOR      1000000ULL
 #define mS_TO_S_FACTOR      1000ULL
+
+#define WDT_TIMEOUT 200 // WDT timeout in seconds
 
 #define SerialMon Serial
 
@@ -65,7 +69,7 @@ float readBattery()
     int vref = 1100;
     uint16_t volt = analogRead(BAT_ADC);
     float battery_voltage = ((float)volt / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
-    D(SerialMon.print("bat voltage: " ); SerialMon.print("bat voltage: " );)
+    D(SerialMon.print("bat voltage: " );)
     return battery_voltage;
 }
 void lowBatteryCheck(float voltage) {

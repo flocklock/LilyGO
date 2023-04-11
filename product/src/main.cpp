@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <Arduino.h>
 #include <acc.hpp>
 #include <utils.hpp>
@@ -18,9 +18,9 @@ Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = "1";
-#define gnssInterval 28800
-#define accInterval 20
-#define fotaInterval 86400
+#define gnssInterval 7200
+#define accInterval 30
+#define fotaInterval 72000
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -31,7 +31,10 @@ float totalActivity = 0;
 
 void setup()
 {
+  esp_task_wdt_init(WDT_TIMEOUT, true); // Enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); // Add the default loop task to the list of tasks watched by the WDT
   battery_voltage = readBattery();
+  lastFotaCheck = 0;
   lowBatteryCheck(battery_voltage);
   
   deviceID = fota.getDeviceID();
@@ -42,38 +45,40 @@ void setup()
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   D(SerialMon.begin(115200);)
-  D(delay(10);)
-  
+  D(delay(100);)
   D(SerialMon.print("Current version: ");) 
   D(SerialMon.println(boardCurrentVersion);)
   D(SerialMon.print("Device id: ");) 
   D(SerialMon.println(deviceID);)
+  D(SerialMon.flush();)
+  delay(1000);
 
  if(accel.begin()) {D(SerialMon.println("acc sensor found");)}
-  
   setupGSM();
   delay(3000);
+  D(modem.sendAT("+CMEE=2");)
   setupFOTAGSM();
-  SerialMon.println("modem set");
+  D(SerialMon.println("modem set");)
   delay(1000);
   
-
-
  
   mqtt.setServer(broker, mqttPort);
   mqtt.setKeepAlive(7200);
 
  if(modem.testAT())
-    SerialMon.println("modem ok");
+    {D(SerialMon.println("modem ok");)}
+
   else
-    SerialMon.println("modem not ok");
-  modem.sendAT("+CNETLIGHT=0");
-  D(modem.sendAT("+CMEE=2");)
+  {
+    D(SerialMon.println("modem not ok");)}
+  
+  
 
   delay(100);
   digitalWrite(PIN_DTR, LOW);
   digitalWrite(LED_PIN, HIGH);
 
+  modem.sendAT("+CNETLIGHT=0");
   D(SerialMon.begin(115200);)
  
   delay(100);
@@ -93,6 +98,7 @@ void setup()
 
 void loop()
 {
+  esp_task_wdt_reset();
   battery_voltage = readBattery();
   lowBatteryCheck(battery_voltage);
   
@@ -112,12 +118,19 @@ void loop()
     digitalWrite(PIN_DTR, LOW);
     delay(1000);
     bool updatedNeeded = fota.execHTTPcheck();
-    modem.sendAT("+CSCLK=1");
   if (updatedNeeded)
   {
+    esp_task_wdt_delete(NULL);
+    esp_task_wdt_deinit();
+    esp_task_wdt_init(2000, true); // Enable panic so ESP32 restarts
+    esp_task_wdt_add(NULL); 
     D(SerialMon.println("Got new update");)
     modem.sendAT("+CSCLK=0");
     fota.execOTA();
+    esp_task_wdt_delete(NULL);
+    esp_task_wdt_deinit();
+    esp_task_wdt_init(WDT_TIMEOUT, true); // Enable panic so ESP32 restarts
+    esp_task_wdt_add(NULL); // Add the default loop task to the list of tasks watched by the WDT
   }
   else
   {    
@@ -137,26 +150,14 @@ void loop()
     }
     
     float lat = 0,  lon = 0;
-    /*
-    for(int i = 0; i < 80; i++) {
-      if (modem.getGPS(&lat, &lon)) {
-        D(Serial.println("The location has been locked");)
-        D(Serial.print("latitude:"); Serial.println(lat);)
-        D(Serial.print("longitude:"); Serial.println(lon);)
-        break;
-      }
-      D(Serial.println("No fix");)
-      delay(1000);
-    }
-    */
     String evaluated;
     for(int i = 0; i < ACTIVITY::COUNT; i++) {
       evaluated += String(activityCounter[i]) + '-';
       activityCounter[i] = 0;
     }
     String message = String(name) + ',' + versionStr + "," + deviceID
-     + "," + String(millis()) + "," + String(lat,5) + "," + String(lon,5) 
-     + "," + String(battery_voltage,0) + "," + String(totalActivity / (activityPointer+1), 3)
+     + "," + String(millis()) + "," + String(lat, 1) + "," + String(lon, 1) 
+     + "," + String(battery_voltage, 2) + "," + String(totalActivity / (activityPointer+1), 3)
      + "," + evaluated;
     D(SerialMon.println(message);)
     delay(2000);
@@ -169,13 +170,6 @@ void loop()
       D(SerialMon.println("mqtt reconnected");)
       mqtt.publish(topic, message.c_str());
     }
-    /*
-    disableGPS();
-    modem.sendAT("+SGPIO=0,4,1,0");
-    if (modem.waitResponse(1000L) != 1) {
-        DBG(" SGPIO=0,4,1,0 false ");
-    }
-    */
     modem.sendAT("+CSCLK=1");
     activityPointer = 0;
     totalActivity = 0;

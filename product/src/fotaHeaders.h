@@ -15,7 +15,7 @@
 #endif
 
 const char *boardModel = "flocklock";  
-int boardCurrentVersion = 1; // The firmware version
+int boardCurrentVersion = 2; // The firmware version
 
 // To define firmware type and version
 esp32FOTAGSM fota(boardModel, boardCurrentVersion);
@@ -100,6 +100,7 @@ void setupGSM()
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
+  SerialAT.println("AT+CSQ");
 
   SerialAT.println("AT+IPR?");
 

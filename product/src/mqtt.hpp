@@ -21,8 +21,8 @@
 #define topicHurta  "fl/hur"
 #define topicHub    "fl/hub"
 
-char* topic = topicHurta;
-char* name = "hub1";
+char* topic = topicHub;
+char* name = "hub";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;
