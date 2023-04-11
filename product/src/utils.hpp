@@ -13,7 +13,7 @@
 #define uS_TO_S_FACTOR      1000000ULL
 #define mS_TO_S_FACTOR      1000ULL
 
-#define WDT_TIMEOUT 200 // WDT timeout in seconds
+#define WDT_TIMEOUT 500 // WDT timeout in seconds
 
 #define SerialMon Serial
 
