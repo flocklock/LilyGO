@@ -32,13 +32,6 @@ int lastSuccesfulSend = 0;
 
 void setup()
 {
-  uint64_t sleepDurationMicros = (uint64_t)24 * 60 * 60 * uS_TO_S_FACTOR;
-  pinMode(PIN_DTR, OUTPUT);
-  digitalWrite(PIN_DTR, LOW);
-  // Put the ESP32 into deep sleep for two days
-  esp_sleep_enable_timer_wakeup(sleepDurationMicros);
-  esp_light_sleep_start();
-  lastSuccesfulSend = millis();
 
   esp_task_wdt_init(WDT_TIMEOUT, true); // Enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); // Add the default loop task to the list of tasks watched by the WDT
@@ -183,18 +176,19 @@ void loop()
         lastSuccesfulSend = millis();
       }
     }
-    if (millis() - lastSuccesfulSend >  gnssInterval * 3 * mS_TO_S_FACTOR) {
-      modemPowerOff();
-      delay(1000);
-      ESP.restart();
-    }
+    
     modem.sendAT("+CSCLK=1");
     activityPointer = 0;
     totalActivity = 0;
     lastGnssCheck = millis();
     delay(1000);
     }
-    
+
+  if (millis() - lastSuccesfulSend >  gnssInterval * 3 * mS_TO_S_FACTOR) {
+      modemPowerOff();
+      delay(1000);
+      ESP.restart();
+    }
   delay(1);
   digitalWrite(PIN_DTR, HIGH);
   esp_sleep_enable_timer_wakeup(accInterval * uS_TO_S_FACTOR);
