@@ -17,7 +17,7 @@ unsigned long gnssTimeout = 0;
 Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
-String versionStr = "1";
+String versionStr = String(boardCurrentVersion);
 #define gnssInterval 7200
 #define accInterval 30
 #define fotaInterval 72000
@@ -37,7 +37,7 @@ void setup()
   esp_task_wdt_add(NULL); // Add the default loop task to the list of tasks watched by the WDT
   battery_voltage = readBattery();
   lastFotaCheck = 0;
-  lowBatteryCheck(battery_voltage);
+  lowBatteryCheck(battery_voltage, 3.4);
   
   deviceID = fota.getDeviceID();
   deviceID = deviceID.substring(deviceID.length() - 5, deviceID.length());
@@ -150,6 +150,8 @@ void loop()
     for(int i = 0; i < activityPointer; i++) {
       totalActivity += lastActivity[i];
     }
+    if (activityPointer <= 1)
+      totalActivity = 0;
     
     float lat = 0,  lon = 0;
     String evaluated;

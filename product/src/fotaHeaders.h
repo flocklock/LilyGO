@@ -15,7 +15,7 @@
 #endif
 
 const char *boardModel = "flocklock";  
-int boardCurrentVersion = 2; // The firmware version
+int boardCurrentVersion = 4; // The firmware version
 
 // To define firmware type and version
 esp32FOTAGSM fota(boardModel, boardCurrentVersion);

@@ -72,10 +72,10 @@ float readBattery()
     D(SerialMon.print("bat voltage: " );)
     return battery_voltage;
 }
-void lowBatteryCheck(float voltage) {
-  if(voltage > 0.1 && voltage < 3.3) {
+void lowBatteryCheck(float realVoltage, float refVoltage = 3.3) {
+  if(realVoltage > 0.1 && realVoltage < refVoltage) {
     delay(100);
-    if(readBattery() > 3.3)
+    if(readBattery() > refVoltage)
         return;
     //modem.sendAT("+CSCLK=1");
     digitalWrite(PIN_DTR, HIGH);
