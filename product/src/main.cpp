@@ -153,7 +153,7 @@ void loop()
       totalActivity = 0;
   
     float lat = 0,  lon = 0;
-    D(int startGNSS = millis();)
+    int startGNSS = millis();
     for(int i = 0; i < 180; i++) {
       if (modem.getGPS(&lat, &lon)) {
         D(Serial.println("The location has been locked");)
@@ -164,7 +164,7 @@ void loop()
       D(Serial.println("No fix");)
       delay(1000);
     }
-    D(int durationGNSS = millis() - startGNSS;)
+    int durationGNSS = millis() - startGNSS;
        
     
     String evaluated;
@@ -177,7 +177,7 @@ void loop()
      + "," + String(millis()) + "," + String(lat, 5) + "," + String(lon, 5) 
      + "," + String(battery_voltage, 2) + "," + String(totalActivity / (activityPointer+1), 3)
      + "," + evaluated;
-     D(message = message + "," + String(durationGNSS);)
+    message = message + "," + String(durationGNSS);
     D(SerialMon.println(message);)
     delay(2000);
     if(mqtt.loop()) {
