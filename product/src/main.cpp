@@ -144,14 +144,7 @@ void loop()
   if(!lastGnssCheck || millis() - lastGnssCheck > gnssInterval * mS_TO_S_FACTOR) {
     digitalWrite(PIN_DTR, LOW);
     delay(10);
-    //enableGPS();
-    modem.sendAT("+SGPIO=0,4,1,1");
-    if (modem.waitResponse(10000L) != 1) {
-        DBG(" SGPIO=0,4,1,1 false ");
-    }
-    
-
-
+    enableGPS();
     
     for(int i = 0; i < activityPointer; i++) {
       totalActivity += lastActivity[i];
@@ -200,11 +193,7 @@ void loop()
         lastSuccesfulSend = millis();
       }
     }
-    //disableGPS();
-    modem.sendAT("+SGPIO=0,4,1,0");
-    if (modem.waitResponse(10000L) != 1) {
-        DBG(" SGPIO=0,4,1,0 false ");
-    }
+    disableGPS();
     
     modem.sendAT("+CSCLK=1");
     activityPointer = 0;
