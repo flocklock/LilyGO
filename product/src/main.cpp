@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 #include <Arduino.h>
 #include <acc.hpp>
 #include <utils.hpp>
@@ -18,9 +18,9 @@ Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = String(boardCurrentVersion);
-#define gnssInterval 7200
+#define gnssInterval 600
 #define accInterval 30
-#define fotaInterval 72000
+#define fotaInterval 7200
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -95,7 +95,7 @@ void setup()
   delay(1000);
   setCpuFrequencyMhz(80);
   delay(1000);
-  disableGPS();
+  enableGPS();
 }
 
 void loop()
@@ -145,6 +145,12 @@ void loop()
     digitalWrite(PIN_DTR, LOW);
     delay(10);
     //enableGPS();
+    modem.sendAT("+SGPIO=0,4,1,1");
+    if (modem.waitResponse(10000L) != 1) {
+        DBG(" SGPIO=0,4,1,1 false ");
+    }
+    
+
 
     
     for(int i = 0; i < activityPointer; i++) {
@@ -152,17 +158,33 @@ void loop()
     }
     if (activityPointer <= 1)
       totalActivity = 0;
-    
+  
     float lat = 0,  lon = 0;
+    D(int startGNSS = millis();)
+    for(int i = 0; i < 180; i++) {
+      if (modem.getGPS(&lat, &lon)) {
+        D(Serial.println("The location has been locked");)
+        D(Serial.print("latitude:"); Serial.println(lat);)
+        D(Serial.print("longitude:"); Serial.println(lon);)
+        break;
+      }
+      D(Serial.println("No fix");)
+      delay(1000);
+    }
+    D(int durationGNSS = millis() - startGNSS;)
+       
+    
     String evaluated;
     for(int i = 0; i < ACTIVITY::COUNT; i++) {
       evaluated += String(activityCounter[i]) + '-';
       activityCounter[i] = 0;
     }
+    
     String message = String(name) + ',' + versionStr + "," + deviceID
-     + "," + String(millis()) + "," + String(lat, 1) + "," + String(lon, 1) 
+     + "," + String(millis()) + "," + String(lat, 5) + "," + String(lon, 5) 
      + "," + String(battery_voltage, 2) + "," + String(totalActivity / (activityPointer+1), 3)
      + "," + evaluated;
+     D(message = message + "," + String(durationGNSS);)
     D(SerialMon.println(message);)
     delay(2000);
     if(mqtt.loop()) {
@@ -177,6 +199,11 @@ void loop()
      if(mqtt.publish(topic, message.c_str())) {
         lastSuccesfulSend = millis();
       }
+    }
+    //disableGPS();
+    modem.sendAT("+SGPIO=0,4,1,0");
+    if (modem.waitResponse(10000L) != 1) {
+        DBG(" SGPIO=0,4,1,0 false ");
     }
     
     modem.sendAT("+CSCLK=1");
