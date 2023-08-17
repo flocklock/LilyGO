@@ -15,7 +15,7 @@
 #endif
 
 const char *boardModel = "flocklock";
-int boardCurrentVersion = 1; // The firmware version
+int boardCurrentVersion = 2; // The firmware version
 
 // To define firmware type and version
 esp32FOTAGSM fota(boardModel, boardCurrentVersion);
@@ -23,7 +23,7 @@ esp32FOTAGSM fota(boardModel, boardCurrentVersion);
 // To define link to check update json
 #define esp32FOTAGSM_checkHOST      "147.251.115.100"         // TO CHANGE
 #define esp32FOTAGSM_checkPORT      8000                 // TO CHANGE, HTTP ONLY
-#define esp32FOTAGSM_checkRESOURCE  "/test_no_acc.json" // TO CHANGE
+#define esp32FOTAGSM_checkRESOURCE  "/koneLive.json" // TO CHANGE
 
 // ============== GSM ===============
 #if (!defined(SRC_TINYGSMCLIENT_H_))

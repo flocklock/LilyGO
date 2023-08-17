@@ -18,9 +18,10 @@ Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = String(boardCurrentVersion);
-#define gnssInterval 14400
-#define accInterval 600
-#define fotaInterval 86400
+#define gnssInterval 600
+#define accInterval 30
+#define fotaInterval 7200
+#define WDT_TIMEOUT 3000  // WDT timeout in seconds
 #define  activitySize 2 * gnssInterval / accInterval
 
 int activityPointer = 0;
@@ -103,7 +104,7 @@ void loop()
   esp_task_wdt_reset();
   battery_voltage = readBattery();
   lowBatteryCheck(battery_voltage);
-  /*
+  
   for (int i = 0; i < 32; i++) {
     e[i] = accel.readAccData(ADXL345_REG_DATAX0);
   }
@@ -112,7 +113,7 @@ void loop()
   lastActivity[activityPointer] = stdDev(e).stdDevX;
   activityPointer++;
   activityCounter[evaluate(e)]++;
-  */
+  
   
 
   if( !lastFotaCheck || millis() - lastFotaCheck > fotaInterval * mS_TO_S_FACTOR) {
@@ -154,7 +155,7 @@ void loop()
   
     float lat = 0,  lon = 0;
     int startGNSS = millis();
-    for(int i = 0; i < 180; i++) {
+    for(int i = 0; i < 600; i++) {
       if (modem.getGPS(&lat, &lon)) {
         D(Serial.println("The location has been locked");)
         D(Serial.print("latitude:"); Serial.println(lat);)
