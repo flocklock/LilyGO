@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 #include <Arduino.h>
 #include <acc.hpp>
 #include <utils.hpp>
@@ -28,6 +28,8 @@ float lastActivity[activitySize];
 int activityCounter[ACTIVITY::COUNT];
 float totalActivity = 0;
 int lastSuccesfulSend = 0;
+int start = 0;
+bool beginning = true;
 
 
 void setup()
@@ -54,6 +56,7 @@ void setup()
   D(SerialMon.println(deviceID);)
   D(SerialMon.flush();)
   delay(1000);
+  beginning = true;
 
  if(accel.begin()) {D(SerialMon.println("acc sensor found");)}
   setupGSM();
@@ -103,7 +106,7 @@ void loop()
   esp_task_wdt_reset();
   battery_voltage = readBattery();
   lowBatteryCheck(battery_voltage);
-  /*
+  
   for (int i = 0; i < 32; i++) {
     e[i] = accel.readAccData(ADXL345_REG_DATAX0);
   }
@@ -112,7 +115,7 @@ void loop()
   lastActivity[activityPointer] = stdDev(e).stdDevX;
   activityPointer++;
   activityCounter[evaluate(e)]++;
-  */
+  
   
 
   if( !lastFotaCheck || millis() - lastFotaCheck > fotaInterval * mS_TO_S_FACTOR) {
@@ -141,7 +144,7 @@ void loop()
     lastFotaCheck = millis();
   }
 
-  if(!lastGnssCheck || millis() - lastGnssCheck > gnssInterval * mS_TO_S_FACTOR) {
+  if(beginning || !lastGnssCheck || millis() - lastGnssCheck > gnssInterval * mS_TO_S_FACTOR) {
     digitalWrite(PIN_DTR, LOW);
     delay(10);
     enableGPS();
@@ -154,7 +157,7 @@ void loop()
   
     float lat = 0,  lon = 0;
     int startGNSS = millis();
-    for(int i = 0; i < 180; i++) {
+    for(int i = 0; i < 300; i++) {
       if (modem.getGPS(&lat, &lon)) {
         D(Serial.println("The location has been locked");)
         D(Serial.print("latitude:"); Serial.println(lat);)
@@ -165,6 +168,8 @@ void loop()
       delay(1000);
     }
     int durationGNSS = millis() - startGNSS;
+    if (millis() > 7200000)
+      beginning = false;
        
     
     String evaluated;
@@ -202,12 +207,13 @@ void loop()
     delay(1000);
     }
 
-  if (millis() - lastSuccesfulSend >  gnssInterval * 3 * mS_TO_S_FACTOR) {
+  if (millis() - lastSuccesfulSend >  gnssInterval * 2 * mS_TO_S_FACTOR) {
       modemPowerOff();
       delay(1000);
       ESP.restart();
     }
   delay(1);
+  esp_task_wdt_reset();
   digitalWrite(PIN_DTR, HIGH);
   esp_sleep_enable_timer_wakeup(accInterval * uS_TO_S_FACTOR);
   D(SerialMon.flush();)

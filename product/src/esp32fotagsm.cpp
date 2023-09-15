@@ -313,13 +313,17 @@ bool esp32FOTAGSM::execHTTPcheck()
             _bin = jsbin;
 
             String fwtype(pltype);
-            http.stop();
+            
             if (plversion > _firwmareVersion && fwtype == _firwmareType)
             {
+                http.stop();
                 return true;
             }
             else
             {
+                modem.sendAT('+CNTP="time.fi.muni.cz",4,1');
+                modem.sendAT('+CNTP');
+                http.stop();
                 return false;
             }
         }
