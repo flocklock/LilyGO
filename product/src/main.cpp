@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <Arduino.h>
 #include <acc.hpp>
 #include <utils.hpp>
@@ -18,8 +18,8 @@ Accelerometer accel = Accelerometer(12345);
 float battery_voltage = 0;
 String deviceID = "xxxxx";
 String versionStr = String(boardCurrentVersion);
-#define gnssInterval 14400
-#define accInterval 600
+#define gnssInterval 600
+#define accInterval 60
 #define fotaInterval 86400
 #define  activitySize 2 * gnssInterval / accInterval
 
@@ -156,6 +156,7 @@ void loop()
       totalActivity = 0;
   
     float lat = 0,  lon = 0;
+    modem.sendAT("+CNTP");
     int startGNSS = millis();
     for(int i = 0; i < 300; i++) {
       if (modem.getGPS(&lat, &lon)) {
@@ -168,7 +169,7 @@ void loop()
       delay(1000);
     }
     int durationGNSS = millis() - startGNSS;
-    if (millis() > 7200000)
+    if (millis() > 180000)
       beginning = false;
        
     

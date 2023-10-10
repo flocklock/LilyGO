@@ -321,8 +321,9 @@ bool esp32FOTAGSM::execHTTPcheck()
             }
             else
             {
-                modem.sendAT('+CNTP="time.fi.muni.cz",4,1');
-                modem.sendAT('+CNTP');
+                modem.sendAT("+CNTP=\"time.fi.muni.cz\",8,1");
+                delay(50);
+                modem.sendAT("+CNTP");
                 http.stop();
                 return false;
             }

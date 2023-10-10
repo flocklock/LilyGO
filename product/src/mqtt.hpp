@@ -23,8 +23,8 @@
 #define topicSedlar "fl/sed"
 #define topicKone   "fl/kone"
 
-char* topic = topicTest;
-char* name = "test";
+char* topic = topicSedlar;
+char* name = "sedU";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;
