@@ -156,7 +156,7 @@ void loop()
       totalActivity = 0;
   
     float lat = 0,  lon = 0;
-    modem.sendAT("+CNTP");
+    //modem.sendAT("+CNTP");
     int startGNSS = millis();
     for(int i = 0; i < 300; i++) {
       if (modem.getGPS(&lat, &lon)) {
@@ -169,7 +169,7 @@ void loop()
       delay(1000);
     }
     int durationGNSS = millis() - startGNSS;
-    if (millis() > 180000)
+    if (millis() > 3600000) // 180000000
       beginning = false;
        
     
