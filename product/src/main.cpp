@@ -201,7 +201,7 @@ void loop()
     }
     disableGPS();
     
-    modem.sendAT("+CSCLK=1");
+    //modem.sendAT("+CSCLK=1");
     activityPointer = 0;
     totalActivity = 0;
     lastGnssCheck = millis();
@@ -215,7 +215,7 @@ void loop()
     }
   delay(1);
   esp_task_wdt_reset();
-  digitalWrite(PIN_DTR, HIGH);
+  //digitalWrite(PIN_DTR, HIGH);
   esp_sleep_enable_timer_wakeup(accInterval * uS_TO_S_FACTOR);
   D(SerialMon.flush();)
   esp_light_sleep_start();

@@ -22,9 +22,11 @@
 #define topicHub    "fl/hub"
 #define topicSedlar "fl/sed"
 #define topicKone   "fl/kone"
+#define topicOtice   "fl/otice"
 
-char* topic = topicSedlar;
-char* name = "sedU";
+
+char* topic = topicOtice;
+char* name = "ot2";
 
 char* broker = "147.251.115.100";
 uint16_t mqttPort = 1883;
